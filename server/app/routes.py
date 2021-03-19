@@ -1,6 +1,7 @@
-from flask import url_for, session
+from flask import url_for, redirect, render_template_string, session
+from werkzeug.urls import url_encode
 
-from app import app, oauth
+from app import app, auth0, db
 from app.models import User
 from app.utils import requires_auth
 
@@ -12,21 +13,29 @@ def index():
 
 @app.route("/login")
 def login():
-    return oauth.auth0.authorize_redirect(redirect_uri=url_for("login_callback"))
+    return auth0.authorize_redirect(
+        redirect_uri=url_for("login_callback", _external=True)
+    )
 
 
 @app.route("/login/callback")
 def login_callback():
-    auth0 = oauth.auth0
-
     # handle response from token endpoint
     token = auth0.authorize_access_token()
-    userinfo = oauth.auth0.parse_id_token(token)
+    userinfo = auth0.parse_id_token(token)
+
+    user_id, username = userinfo["sub"], userinfo["nickname"]
+
+    if not User.query.get(user_id):
+        user = User(id=user_id, username=username)
+        db.session.add(user)
+        db.session.commit()
 
     # store user info in flask session
     session["jwt_payload"] = userinfo
     session["profile"] = {
-        "user_id": userinfo["sub"],
+        "user_id": user_id,
+        "username": username,
         "name": userinfo["name"],
         "picture": userinfo["picture"],
     }
@@ -43,7 +52,9 @@ def logout():
         "returnTo": url_for("dashboard", _external=True),
         "client_id": "a5IXxvCxOHrLFuT9YfunS320hTZqWY7p",
     }
-    return redirect(f"{oauth.auth0.api_base_url}/v2/logout?{urlencode(params)}")
+    return redirect(
+        f"{auth0.api_base_url}/v2/logout?{url_encode(params)}"
+    )
 
 
 @app.route("/dashboard")
@@ -52,4 +63,4 @@ def dashboard():
     user_id = session["profile"]["user_id"]
 
     user = User.query.get(user_id)
-    return render(f"<h1>Hello! {user.username}</h1>")
+    return render_template_string(f"<h1>Hello! {user.username}</h1>")
