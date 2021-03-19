@@ -35,14 +35,14 @@ Saves us the hassle of going into editing code every time we change something. T
 especially useful to store config variables that are sensitive (api-keys, secrets).
 For example, on Linux:
 
-```bash
-$ cp .env.example .env
+```shell
+cp .env.example .env
  ```
 
 4. Now run the server with Flask
 
 ```shell
-$ flask run -h 0.0.0.0 -p 8080
+flask run -h 0.0.0.0 -p 8080
 ```
 
 Now go to your browser and head to http://0.0.0.0/8080 to see the website in action.
