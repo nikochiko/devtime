@@ -23,11 +23,10 @@ app, and connect it from the Auth0 connections dashboard.
 cd server/
 
 # optional: install and setup virtualenv
-pip install virtualenv  # this installs the package you'll need to create virtualenvs
-python -m venv venv/  # this sets up a virtualenv in venv/ directory
-source venv/bin/activate  # activate that virtualenv. use `deactivate` to exit the virtualenv
+python3 -m venv venv/  # this sets up a virtual environment in venv/ directory
+source venv/bin/activate  # activate that venv. use `deactivate` to exit it later
 
-python -m pip install -r requirements.txt
+python3 -m pip install -r requirements.txt
 ```
 
 3. Copy `.env.example` to `.env`. This is where we'll keep top-level configuration.
