@@ -30,10 +30,9 @@ source venv/bin/activate  # activate that virtualenv. use `deactivate` to exit t
 python -m pip install -r requirements.txt
 ```
 
-3. Copy `.env.example` to `.env`. This is where we'll keep top-level configuration. 
+3. Copy `.env.example` to `.env`. This is where we'll keep top-level configuration.
 Saves us the hassle of going into editing code every time we change something. This is
 especially useful to store config variables that are sensitive (api-keys, secrets).
-
 For example, on Linux:
 
 ```bash
@@ -41,7 +40,7 @@ $ cp .env.example .env
  ```
 
 4. Now run the server with Flask
-    
+
 ```shell
 $ flask run -h 0.0.0.0 -p 8080
 ```
