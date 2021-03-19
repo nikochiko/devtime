@@ -10,6 +10,6 @@ app.config.from_object(Config)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 oauth = OAuth(app)
-auth0 = oauth.register('auth0', jwks_uri=Config.AUTH0_JWKS_URI)
+auth0 = oauth.register("auth0", jwks_uri=Config.AUTH0_JWKS_URI)
 
 from app import routes, models  # noqa: F401, E402

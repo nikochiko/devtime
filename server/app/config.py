@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 
 
 # two levels outside this file (server/ directory)
@@ -20,3 +21,5 @@ class Config:
     AUTH0_AUTHORIZE_URL = f"{AUTH0_API_BASE_URL}/authorize"
     AUTH0_CLIENT_KWARGS = {"scope": "openid profile email"}
     AUTH0_JWKS_URI = f"{AUTH0_API_BASE_URL}/.well-known/jwks.json"
+
+    DEVTIME_ACCEPTABLE_BREAK_DURATION = timedelta(minutes=5)

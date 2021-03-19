@@ -13,7 +13,25 @@ class User(db.Model):
         return f"<User: {self.username}>"
 
 
+class CodingSession(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    language = db.Column(db.String(64), index=True)
+    started_at = db.Column(db.DateTime)
+    last_heartbeat_at = db.Column(db.DateTime)
+
+    user_id = db.Column(
+        db.String(64), db.ForeignKey("user.id"), nullable=False
+    )
+    user = db.relationship(
+        "User", backref=db.backref("coding_sessions", lazy=True)
+    )
+
+    def __repr__(self):
+        return f"<CodingSession {self.id}: {self.language}>"
+
+
 # Events
+
 
 @event.listens_for(User, "before_insert")
 def receive_before_insert(_mapper, _connection, target):

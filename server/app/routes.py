@@ -1,9 +1,19 @@
-from flask import url_for, redirect, render_template_string, session
+from datetime import datetime
+
+from flask import (
+    url_for,
+    request,
+    redirect,
+    render_template_string,
+    jsonify,
+    session,
+    g,
+)
 from werkzeug.urls import url_encode
 
 from app import app, auth0, db
-from app.models import User
-from app.utils import requires_auth
+from app.models import User, CodingSession
+from app.decorators import requires_auth, requires_api_key
 
 
 @app.route("/")
@@ -52,9 +62,7 @@ def logout():
         "returnTo": url_for("dashboard", _external=True),
         "client_id": "a5IXxvCxOHrLFuT9YfunS320hTZqWY7p",
     }
-    return redirect(
-        f"{auth0.api_base_url}/v2/logout?{url_encode(params)}"
-    )
+    return redirect(f"{auth0.api_base_url}/v2/logout?{url_encode(params)}")
 
 
 @app.route("/dashboard")
@@ -63,4 +71,55 @@ def dashboard():
     user_id = session["profile"]["user_id"]
 
     user = User.query.get(user_id)
-    return render_template_string(f"<h1>Hello! {user.username}</h1>")
+    return render_template_string(
+        f"<h1>Hello! {user.username}</h1>"
+        f"<p>Your API Key is: {user.api_key}</p>"
+    )
+
+
+@app.route("/api/heartbeats", methods=["POST"])
+@requires_api_key
+def heartbeats():
+    """
+    Anatomy of a heartbeat:
+      recorded_at: datetime (iso8601)
+      language: string
+
+    e.g.
+    {
+      "recorded_at": "2021-03-19T19:23:09",
+      "language": "python"
+    }
+    """
+    data = request.get_json()
+    recorded_at, language = data["recorded_at"], data["language"]
+
+    # try to get last session with the same programming language
+    last_session = (
+        CodingSession.query.filter_by(user=g.api_user, language=language)
+        .order_by(CodingSession.id.desc())
+        .first()
+    )
+
+    # add a new session object if it is first for the language or stale
+    if (
+        last_session is None
+        or last_session.last_heartbeat_at - datetime.now()
+        > app.config["DEVTIME_ACCEPTABLE_BREAK_DURATION"]
+    ):
+        coding_session = CodingSession(
+            user=g.api_user,
+            language=language,
+            started_at=recorded_at,
+            last_heartbeat_at=recorded_at,
+        )
+        db.session.add(coding_session)
+    else:
+        # overwrite last_heartbeat to most recent heartbeat
+        last_session.last_heartbeat_at = recorded_at
+        db.session.add(last_session)
+
+    db.session.commit()
+
+    # return OK response
+    return jsonify({"status": "OK"})
