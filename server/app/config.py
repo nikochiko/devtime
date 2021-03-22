@@ -5,14 +5,17 @@ from datetime import timedelta
 # two levels outside this file (server/ directory)
 base_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
+DB_URL = os.getenv("DATABASE_URL", f"sqlite:///{os.path.join(base_dir, 'app.db')}")
+
+# heroku still uses postgres:/// idfk why
+DB_URL = DB_URL.replace("postgres:///", "postgresql:///")
+
 
 class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", os.urandom(16))
 
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
-        "DATABASE_URL"
-    ) or "sqlite:///" + os.path.join(base_dir, "app.db")
-    SQLALCHEMY_TRACK_MODIFICATIONS = True
+    SQLALCHEMY_DATABASE_URI = DB_URL
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     AUTH0_CLIENT_ID = "a5IXxvCxOHrLFuT9YfunS320hTZqWY7p"
     AUTH0_CLIENT_SECRET = os.environ.get("AUTH0_CLIENT_SECRET")
