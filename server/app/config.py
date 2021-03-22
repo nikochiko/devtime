@@ -7,8 +7,8 @@ base_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 DB_URL = os.getenv("DATABASE_URL", f"sqlite:///{os.path.join(base_dir, 'app.db')}")
 
-# heroku still uses postgres:/// idfk why
-DB_URL = DB_URL.replace("postgres:///", "postgresql:///")
+# heroku still uses postgres:// idfk why
+DB_URL = DB_URL.replace("postgres://", "postgresql://")
 
 
 class Config:
