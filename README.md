@@ -49,7 +49,7 @@ cp .env.example .env
 flask run -h 0.0.0.0 -p 8000
 ```
 
-Now go to your browser and head to http://localhost:8080 to see the website in action.
+Now go to your browser and head to http://localhost:8000 to see the website in action.
 
 ## Roadmap
 
