@@ -45,3 +45,17 @@ flask run -h 0.0.0.0 -p 8080
 ```
 
 Now go to your browser and head to http://0.0.0.0/8080 to see the website in action.
+
+# Roadmap
+
+### The project currently has:
+* Authentication setup with GitHub OAuth via Auth0
+* API-Key functionality
+* Ability to receive heartbeats from editors and store them as coding sessions in the database
+
+### What we want it to have in the future?
+[ ] Better UI/UX
+[ ] Coding charts - hourly, daily, weekly
+[ ] Widgets of these charts for showing on Portfolios
+[ ] Widget for whether the user is currently coding/idle/offline
+[ ] Editor plug-ins
