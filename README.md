@@ -1,9 +1,14 @@
-# devtickticktick
-Dev tick tick tick. &lt;secret!>
+# DevTime - Code-time metrics for developers 👨‍💻
+⏰ We track time for you while you do the coding. Available at [DevTime.Tech](http://devtime.tech)
 
 ## Development Setup
 
-* Cloning the Repo
+### Techstack
+The main server is a Flask app - designed so to keep it small and lightweight. The production database
+is a PostgreSQL DB on Heroku, although the app is configured to run with SQLite without any additional
+dependencies (especially useful for development environments). 
+
+### Cloning the Repo
 
 To get the repository on your local device, install git and run:
 
@@ -41,19 +46,19 @@ cp .env.example .env
 4. Now run the server with Flask
 
 ```shell
-flask run -h 0.0.0.0 -p 8080
+flask run -h 0.0.0.0 -p 8000
 ```
 
-Now go to your browser and head to http://0.0.0.0/8080 to see the website in action.
+Now go to your browser and head to http://localhost:8080 to see the website in action.
 
-# Roadmap
+## Roadmap
 
 ### The project currently has:
 * Authentication setup with GitHub OAuth via Auth0
 * API-Key functionality
 * Ability to receive heartbeats from editors and store them as coding sessions in the database
 
-### What we want it to have in the future?
+### What we want it to have in the future:
 * [ ] Better UI/UX
 * [ ] Coding charts - hourly, daily, weekly
 * [ ] Widgets of these charts for showing on Portfolios
