@@ -1,5 +1,5 @@
 # DevTime - Code-time metrics for developers 👨‍💻
-⏰ We track time for you while you do the coding. Available at [DevTime.Tech](http://devtime.tech)
+🕒 We track time for you while you do the coding. Available at [DevTime.Tech](http://devtime.tech)
 
 ## Development Setup
 
