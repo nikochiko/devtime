@@ -15,6 +15,7 @@ def requires_auth(f):
     def wrapper(*args, **kwargs):
         if "profile" not in session:
             return redirect("/login")
+        g.user = User.query.get(session["profile"]["user_id"])
         return f(*args, **kwargs)
 
     return wrapper

@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block body %}
+  <p>Hello {{ session['profile']['name'] or g.user['username'] }}!</p>
+  <p>Your private api key is "{{ g.user['api_key'] }}". <b>Do not share this with anyone.</p>
+  <p>Your current activity status: {{ g.user.current_activity_message }}</p>
+{% endblock %}

@@ -1,10 +1,11 @@
 from datetime import datetime
+from dateutil.parser import isoparse
 
 from flask import (
     url_for,
     request,
     redirect,
-    render_template_string,
+    render_template,
     jsonify,
     session,
     g,
@@ -36,10 +37,12 @@ def login_callback():
 
     user_id, username = userinfo["sub"], userinfo["nickname"]
 
-    if not User.query.get(user_id):
+    if not (user := User.query.get(user_id)):
         user = User(id=user_id, username=username)
         db.session.add(user)
         db.session.commit()
+
+    g.user = user
 
     # store user info in flask session
     session["jwt_payload"] = userinfo
@@ -59,7 +62,7 @@ def logout():
     session.clear()
     # Redirect user to logout endpoint
     params = {
-        "returnTo": url_for("dashboard", _external=True),
+        "returnTo": url_for("index", _external=True),
         "client_id": "a5IXxvCxOHrLFuT9YfunS320hTZqWY7p",
     }
     return redirect(f"{auth0.api_base_url}/v2/logout?{url_encode(params)}")
@@ -71,10 +74,14 @@ def dashboard():
     user_id = session["profile"]["user_id"]
 
     user = User.query.get(user_id)
-    return render_template_string(
-        f"<h1>Hello! {user.username}</h1>"
-        f"<p>Your API Key is: {user.api_key}</p>"
-    )
+    return render_template("dashboard.html")
+
+
+@app.route("/activity")
+@requires_auth
+def activity():
+    g.user = User.query.get(session["profile"]["user_id"])
+    return render_template("activity.html")
 
 
 @app.route("/api/heartbeats", methods=["POST"])
@@ -93,6 +100,7 @@ def heartbeats():
     """
     data = request.get_json()
     recorded_at, language = data["recorded_at"], data["language"]
+    recorded_at = isoparse(recorded_at)
 
     # try to get last session with the same programming language
     last_session = (
@@ -104,7 +112,7 @@ def heartbeats():
     # add a new session object if it is first for the language or stale
     if (
         last_session is None
-        or last_session.last_heartbeat_at - datetime.now()
+        or recorded_at - last_session.last_heartbeat_at
         > app.config["DEVTIME_ACCEPTABLE_BREAK_DURATION"]
     ):
         coding_session = CodingSession(

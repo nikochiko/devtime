@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from sqlalchemy import event
 
 from app import db
@@ -11,6 +13,26 @@ class User(db.Model):
 
     def __repr__(self):
         return f"<User: {self.username}>"
+
+    @property
+    def current_activity_message(self):
+        """An activity message for the user in English (Online/Idle/Offline)"""
+
+        last_coding_session = CodingSession.query.filter_by(user=self).order_by(CodingSession.last_heartbeat_at.desc()).first()
+        if last_coding_session is None:
+            return "It seems you haven't connected DevTime to your editors yet!"
+        elif (since_last_hb := datetime.utcnow() - last_coding_session.last_heartbeat_at) < timedelta(seconds=60):
+            session_length = last_coding_session.length
+            return f"You're writing code right now! Time spent coding: {str(session_length)}, Language: {last_coding_session.language}"
+        elif since_last_hb < timedelta(minutes=5):
+            session_length = last_coding_session.length
+            return f"You're idle right now. Just before that, you wrote {last_coding_session.language} code for: {session_length}"
+        else:
+            return f"You're currently not writing any code. It's been {since_last_hb} since you last coded."
+
+    @property
+    def last_session(self):
+        """Return last recorded session"""
 
 
 class CodingSession(db.Model):
@@ -28,6 +50,10 @@ class CodingSession(db.Model):
 
     def __repr__(self):
         return f"<CodingSession {self.id}: {self.language}>"
+
+    @property
+    def length(self):
+        return self.last_heartbeat_at - self.started_at
 
 
 # Events

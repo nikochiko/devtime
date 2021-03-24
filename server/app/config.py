@@ -14,6 +14,8 @@ DB_URL = DB_URL.replace("postgres://", "postgresql://")
 class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", os.urandom(16))
 
+    TEMPLATES_AUTO_RELOAD = True
+
     SQLALCHEMY_DATABASE_URI = DB_URL
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
