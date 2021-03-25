@@ -13,7 +13,7 @@ dependencies (especially useful for development environments).
 To get the repository on your local device, install git and run:
 
 ```git
-git clone https://github.com/nikochiko/devtickticktick.git
+git clone https://github.com/nikochiko/devtime.git
 ```
 
 ### [For the server] Get the server running
