@@ -131,3 +131,4 @@ dmypy.json
 
 # sqlite
 *.db
+.vscode
