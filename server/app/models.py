@@ -18,10 +18,19 @@ class User(db.Model):
     def current_activity_message(self):
         """An activity message for the user in English (Online/Idle/Offline)"""
 
-        last_coding_session = CodingSession.query.filter_by(user=self).order_by(CodingSession.last_heartbeat_at.desc()).first()
+        last_coding_session = (
+            CodingSession.query.filter_by(user=self)
+            .order_by(CodingSession.last_heartbeat_at.desc())
+            .first()
+        )
         if last_coding_session is None:
-            return "It seems you haven't connected DevTime to your editors yet!"
-        elif (since_last_hb := datetime.now(timezone.utc) - last_coding_session.last_heartbeat_at) < timedelta(seconds=60):
+            return (
+                "It seems you haven't connected DevTime to your editors yet!"
+            )
+        elif (
+            since_last_hb := datetime.now(timezone.utc)
+            - last_coding_session.last_heartbeat_at
+        ) < timedelta(seconds=60):
             session_length = last_coding_session.length
             return f"You're writing code right now! Time spent coding: {str(session_length)}, Language: {last_coding_session.language}"
         elif since_last_hb < timedelta(minutes=5):
