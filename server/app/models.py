@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import event
 
@@ -21,7 +21,7 @@ class User(db.Model):
         last_coding_session = CodingSession.query.filter_by(user=self).order_by(CodingSession.last_heartbeat_at.desc()).first()
         if last_coding_session is None:
             return "It seems you haven't connected DevTime to your editors yet!"
-        elif (since_last_hb := datetime.utcnow() - last_coding_session.last_heartbeat_at) < timedelta(seconds=60):
+        elif (since_last_hb := datetime.now(timezone.utc) - last_coding_session.last_heartbeat_at) < timedelta(seconds=60):
             session_length = last_coding_session.length
             return f"You're writing code right now! Time spent coding: {str(session_length)}, Language: {last_coding_session.language}"
         elif since_last_hb < timedelta(minutes=5):
@@ -38,8 +38,8 @@ class User(db.Model):
 class CodingSession(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     language = db.Column(db.String(64), index=True)
-    started_at = db.Column(db.DateTime)
-    last_heartbeat_at = db.Column(db.DateTime)
+    started_at = db.Column(db.DateTime(timezone=True))
+    last_heartbeat_at = db.Column(db.DateTime(timezone=True))
 
     user_id = db.Column(
         db.String(64), db.ForeignKey("user.id"), nullable=False

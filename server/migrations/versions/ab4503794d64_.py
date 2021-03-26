@@ -21,8 +21,8 @@ def upgrade():
     op.create_table('coding_session',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('language', sa.String(length=64), nullable=True),
-    sa.Column('started_at', sa.DateTime(), nullable=True),
-    sa.Column('last_heartbeat_at', sa.DateTime(), nullable=True),
+    sa.Column('started_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('last_heartbeat_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('user_id', sa.String(length=64), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
