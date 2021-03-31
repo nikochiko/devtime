@@ -56,7 +56,7 @@ class User(db.Model):
         """Compiles stats for user between after dt1 and before dt2"""
 
         sessions = CodingSession.query.filter(
-            CodingSession.user==self,
+            CodingSession.user == self,
             CodingSession.last_heartbeat_at > dt1,
             CodingSession.started_at < dt2,
         ).order_by(CodingSession.started_at.asc())
@@ -80,30 +80,35 @@ class User(db.Model):
                 stats["idle_for"] += round(idle_time.seconds / 60)
 
             # convert duration to minutes
-            duration = round((
-                right_end - left_end + timedelta(seconds=30)
-            ).seconds / 60)
+            duration = round(
+                (right_end - left_end + timedelta(seconds=30)).seconds / 60
+            )
 
             stats["languages"][session.language] += duration
             stats["editors"][session.editor] += duration
 
             # in total, don't consider overlapping sessions
             stats["total"] += (
-                max(right_end, last_on_left) - max(left_end, last_on_left) + timedelta(seconds=30)
+                max(right_end, last_on_left)
+                - max(left_end, last_on_left)
+                + timedelta(seconds=30)
             ).seconds / 60
             stats["total"] = round(stats["total"])
             last_on_left = max(right_end, last_on_left)
 
         return stats
 
-
-    def daywise_stats(self, start: datetime, end: Optional[datetime] = None) -> dict[str, any]:
+    def daywise_stats(
+        self, start: datetime, end: Optional[datetime] = None
+    ) -> dict[str, any]:
         """Get stats on a daywise-frequency"""
         if end is None:
             end = start + timedelta(days=1)
 
         # check end is a day after start
-        assert start <= end, "End date must be greater than or equal to start date"
+        assert (
+            start <= end
+        ), "End date must be greater than or equal to start date"
 
         # stats will map dates in isoformat to the stats from get_stats_between for that day
         stats = {}
@@ -112,7 +117,9 @@ class User(db.Model):
         current_date = start
         while current_date <= end:
             day_after_current = current_date + timedelta(days=1)
-            stats[current_date.strftime("%d-%m-%y")] = self.get_stats_between(current_date, day_after_current)
+            stats[current_date.strftime("%d-%m-%y")] = self.get_stats_between(
+                current_date, day_after_current
+            )
 
             current_date = day_after_current
 
