@@ -72,6 +72,7 @@ def logout():
 @app.route("/dashboard")
 @requires_auth
 def dashboard():
+    g.jwt_token = get_jwt_for_user(g.user)
     return render_template("dashboard.html")
 
 
@@ -136,9 +137,25 @@ def heartbeats():
 @app.route("/api/activity", methods=["GET"])
 @requires_jwt_token
 def activity_api():
-    start, end = request.args.get("start"), request.args.get("end")
+    start_iso, end_iso = request.args.get("start"), request.args.get("end")
 
-    end = end if end is not None else datetime.now(timezone.utc)
-    start = start if start is not None else end - timedelta(hours=24)
+    start = isoparse(start_iso) if start_iso else datetime.now(timezone.utc) - timedelta(days=1)
+    end = isoparse(end_iso) if end_iso else start + timedelta(days=1)
 
     return jsonify(g.user.get_stats_between(start, end))
+
+
+@app.route('/api/daywise_stats', methods=["GET"])
+@requires_jwt_token
+def daywise_stats():
+    start_date, end_date = request.args.get("start"), request.args.get("end")
+
+    # default weekly stats
+    start = isoparse(start_date) if start_date else date.today() - timedelta(days=7)
+    end = isoparse(end_date) if end_date else date.today()
+
+    remove_time_attrs = lambda d: datetime(d.year, d.month, d.day, tzinfo=d.tzinfo)
+
+    start_date, end_date = remove_time_attrs(start), remove_time_attrs(end) - timedelta(milliseconds=1)
+
+    return jsonify(g.user.daywise_stats(start_date, end_date))

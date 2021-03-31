@@ -1,43 +1,42 @@
-{% extends "base.html" %}
+{% extends "base.html" %} {% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+<script src="{{ url_for('static', filename='js/dashboard-charts.js') }}"></script>
+{% endblock %} 
 {% block body %}
-  <br />
-  <div class="flex mx-auto px-4 rounded-md border-2 border-blue-800">
-    <h3 class="heading text-strong">Hello, {{ session['profile']['name'] }}</h3>
-  </div>
+<br />
+<div>
   <div>
     <div>
       <div>
         <div>
           <div>
-            <div>    
-              <div class="flex flex-wrap">
-                <div class="w-full lg:w-6/12 xl:w-3/12 px-4">
-                  <div class="relative flex flex-col min-w-0 break-words bg-white rounded mb-6 xl:mb-0 shadow-lg">
-                    <div class="flex-auto p-4">
-                      <div class="flex flex-wrap">
-                        <div class="relative w-full pr-4 max-w-full flex-grow flex-1">
-                          <h5 class="text-blueGray-400 uppercase font-bold text-xs">
-                            Traffic
-                          </h5>
-                          <span class="font-semibold text-xl text-blueGray-700">
-                            350,897
-                          </span>
+            <div class="flex flex-inline">
+              <div class="w-full lg:w-6/12 px-4 rounded">
+                <div
+                  class="relative flex min-w-0 break-words bg-gray-100 rounded mb-6 xl:mb-0 shadow-lg"
+                >
+                  <div class="flex-auto p-4">
+                    <h2 class="font-bold text-gray-800">Daily Statistics</h2>
+                      <div x-data="{ chart: chartData('{{ g.jwt_token }}') }" x-init="chart.fetch();">
+                        <div class="inline-block">
+                          <template x-for="(item,index) in chart.timelineOptions">
+                            <button class="px-4 py-2 text-gray-500 rounded-lg hover:text-gray-800 text-xs transition-colors duration-100 focus:outline-none cursor-pointer" :class="{'text-blue-600':index==chart.selectedOption}" @click="chart.selectOption(index);">
+                              <span x-text="item.label"></span>
+                            </button>
+                          </template>
                         </div>
-                        <div class="relative w-auto pl-4 flex-initial">
-                          <div class="text-white p-3 text-center inline-flex items-center justify-center w-12 h-12 shadow-lg rounded-full bg-red-500">
-                            <i class="far fa-chart-bar"></i>
-                          </div>
-                        </div>
+                        <canvas id="daywiseChart"></canvas>
                       </div>
-                        <p class="text-sm text-blueGray-400 mt-4">
-                        <span class="text-emerald-500 mr-2">
-                          <i class="fas fa-arrow-up"></i> 3.48%
-                        </span>
-                        <span class="whitespace-nowrap">
-                          Since last month
-                        </span>
-                      </p>
                     </div>
+                  </div>
+                </div>
+                <div
+                  class="relative flex min-w-0 break-words bg-gray-100 rounded mb-6 xl:mb-0 shadow-lg"
+                >
+                  <div class="flex-auto p-4" x-data="{ todaysChart: todaysStats('{{ g.jwt_token }}') }" x-init="todaysChart.fetch()">
+                    <h2 class="font-bold text-gray-800">Today's Stats</h2>
+                    <span class="font-bold text-sm">Total time today: <span x-text="prettifyMinutes(todaysChart.data.total)"></span></span>
+                    <canvas id="todaysStats"></canvas>
                   </div>
                 </div>
               </div>
@@ -47,4 +46,5 @@
       </div>
     </div>
   </div>
+</div>
 {% endblock %}

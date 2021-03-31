@@ -10,10 +10,10 @@
   {# <link href="//db.onlinewebfonts.com/c/dfeb63b3fa25d016a136dd3f1a38e630?family=Filetto" rel="stylesheet" type="text/css"/> #}
   {% block head %}{% endblock %}
 </head>
-<body class="bg-gray-100">
-  <nav class="bg-gray-200">
+<body class="bg-gray-400">
+  <nav class="bg-gray-300">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-4">
-      <div class="relative flex items-center justify-between h-14">
+      <div class="relative flex items-center justify-between h-16">
         <div class="flex-1 flex items-center justify-center sm:items-stretch sm:justify-start">
           <div class="flex-shrink-0 flex items-center">
             <a href="{{ url_for("index") }}">
@@ -44,7 +44,7 @@
                   {% if request.url_rule.endpoint == 'activity' %}
                     class="text-gray-200 rounded-md bg-blue-700 px-3 py-2 text-sm font-medium" aria-current="page"
                   {% else %}
-                    class="text-gray-800 rounded-md hover:bg-gray-200 hover:text-blue-700 px-3 py-2 text-sm font-medium"
+                    class="text-gray-800 rounded-md hover:text-blue-700 px-3 py-2 text-sm font-medium"
                   {% endif %}
                 >
                   Activity
@@ -56,7 +56,7 @@
                   {% if request.url_rule.endpoint == 'widgets' %}
                     class="text-gray-200 rounded-md bg-blue-700 px-3 py-2 text-sm font-medium" aria-current="page"
                   {% else %}
-                    class="text-gray-800 rounded-md hover:bg-gray-200 hover:text-blue-700 px-3 py-2 text-sm font-medium"
+                    class="text-gray-800 rounded-md hover:text-blue-700 px-3 py-2 text-sm font-medium"
                   {% endif %}
                 >
                   Widgets
