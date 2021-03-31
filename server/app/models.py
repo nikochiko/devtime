@@ -1,6 +1,9 @@
+from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import event
+from sqlalchemy.dialects.postgresql import JSONB
+from flask import current_app
 
 from app import db
 from app.utils import generate_api_key
@@ -10,6 +13,8 @@ class User(db.Model):
     id = db.Column(db.String(64), primary_key=True)
     username = db.Column(db.String(20), index=True, unique=True)
     api_key = db.Column(db.String(255), index=True, unique=True)
+    timezone_offset = db.Column(db.Integer, default=0)
+    statistics = db.Column(JSONB())
 
     def __repr__(self):
         return f"<User: {self.username}>"
@@ -18,11 +23,7 @@ class User(db.Model):
     def current_activity_message(self):
         """An activity message for the user in English (Online/Idle/Offline)"""
 
-        last_coding_session = (
-            CodingSession.query.filter_by(user=self)
-            .order_by(CodingSession.last_heartbeat_at.desc())
-            .first()
-        )
+        last_coding_session = self.last_session
         if last_coding_session is None:
             return (
                 "It seems you haven't connected DevTime to your editors yet!"
@@ -42,6 +43,57 @@ class User(db.Model):
     @property
     def last_session(self):
         """Return last recorded session"""
+        return (
+            CodingSession.query.filter_by(user=self)
+            .order_by(CodingSession.last_heartbeat_at.desc())
+            .first()
+        )
+
+    def get_stats_between(
+        self, dt1: datetime, dt2: datetime
+    ) -> dict[str, any]:
+        """Compiles stats for user between after dt1 and before dt2"""
+
+        print(f"{type(CodingSession.last_heartbeat_at)}, {type(dt1)}")
+        sessions = CodingSession.query.filter(
+            CodingSession.user==self,
+            CodingSession.last_heartbeat_at > dt1,
+            CodingSession.started_at < dt2,
+        ).order_by(CodingSession.started_at.asc())
+
+        stats = {
+            "languages": defaultdict(int),
+            "total": 0,  # minutes
+            "editors": defaultdict(int),
+            "idle_for": 0,  # minutes
+        }
+
+        allowed_break = current_app.config["DEVTIME_ACCEPTABLE_BREAK_DURATION"]
+        last_on_left = dt1
+        for session in sessions:
+            left_end = max(session.started_at, dt1)
+            right_end = min(session.last_heartbeat_at, dt2)
+
+            # add to idle time if idle for more than allowed break
+            idle_time = left_end - last_on_left
+            if idle_time > allowed_break:
+                stats["idle_for"] += idle_time.seconds / 60
+
+            # convert duration to minutes
+            duration = (
+                right_end - left_end + timedelta(seconds=30)
+            ).seconds / 60
+
+            stats["languages"][session.language] += duration
+            stats["editors"][session.editor] += duration
+
+            # in total, don't consider overlapping sessions
+            stats["total"] += (
+                max(right_end, last_on_left) - max(left_end, last_on_left)
+            ).seconds / 60
+            last_on_left = max(right_end, last_on_left)
+
+        return stats
 
 
 class CodingSession(db.Model):
@@ -49,6 +101,7 @@ class CodingSession(db.Model):
     language = db.Column(db.String(64), index=True)
     started_at = db.Column(db.DateTime(timezone=True))
     last_heartbeat_at = db.Column(db.DateTime(timezone=True))
+    editor = db.Column(db.String(20))
 
     user_id = db.Column(
         db.String(64), db.ForeignKey("user.id"), nullable=False

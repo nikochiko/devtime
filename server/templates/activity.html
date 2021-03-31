@@ -1,6 +1,39 @@
 {% extends "base.html" %}
+{% block head %}
+  <script src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12"></script>
+{% endblock %}
 {% block body %}
+  <noscript>This page requires javascript to run!</noscript>
   <p>Hello {{ session['profile']['name'] or g.user['username'] }}!</p>
   <p>Your private api key is "{{ g.user['api_key'] }}". <b>Do not share this with anyone.</p>
   <p>Your current activity status: {{ g.user.current_activity_message }}</p>
+  <script>
+    function getStats(authToken) {
+      console.log(JSON.stringify(document.querySelector('[x-data]').__x.getUnobservedData()));
+      return {
+        isLoading: false,
+        stats: null,
+        fetchStats() {
+          this.isLoading = true;
+          fetch("/api/activity", { method: "GET", headers: { Authorization: `token ${authToken}` } })
+            .then(resp => resp.json())
+            .then(data => {
+              this.isLoading = false;
+              this.stats = data;
+            });
+        }
+      }
+    }
+  </script>
+  <div>
+    <div x-data="getStats('{{ g.jwt_token }}')">
+      <p x-show="isLoading">Analysing<span id="typed-analysing"></span></p>
+      <button @click=fetchStats()>Fetch!</button>
+      <p x-text="JSON.stringify(stats || {}, null, 2)"></p>
+    </div>
+    <script>
+      var analysingStrings = ["", ".", "..", "..."];
+      var typed = new Typed('#typed-analysing', { strings: analysingStrings, loop: true });
+    </script>
+  </div>
 {% endblock %}

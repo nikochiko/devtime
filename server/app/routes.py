@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from dateutil.parser import isoparse
 
 from flask import (
@@ -14,7 +14,8 @@ from werkzeug.urls import url_encode
 
 from app import app, auth0, db
 from app.models import User, CodingSession
-from app.decorators import requires_auth, requires_api_key
+from app.decorators import requires_auth, requires_api_key, requires_jwt_token
+from app.utils import get_jwt_for_user
 
 
 @app.route("/")
@@ -71,16 +72,13 @@ def logout():
 @app.route("/dashboard")
 @requires_auth
 def dashboard():
-    user_id = session["profile"]["user_id"]
-
-    user = User.query.get(user_id)
     return render_template("dashboard.html")
 
 
 @app.route("/activity")
 @requires_auth
 def activity():
-    g.user = User.query.get(session["profile"]["user_id"])
+    g.jwt_token = get_jwt_for_user(g.user)
     return render_template("activity.html")
 
 
@@ -100,6 +98,7 @@ def heartbeats():
     """
     data = request.get_json()
     recorded_at, language = data["recorded_at"], data["language"]
+    editor = data["client"]
     recorded_at = isoparse(recorded_at)
 
     # try to get last session with the same programming language
@@ -120,6 +119,7 @@ def heartbeats():
             language=language,
             started_at=recorded_at,
             last_heartbeat_at=recorded_at,
+            editor=editor,
         )
         db.session.add(coding_session)
     else:
@@ -131,3 +131,14 @@ def heartbeats():
 
     # return OK response
     return jsonify({"status": "OK"})
+
+
+@app.route("/api/activity", methods=["GET"])
+@requires_jwt_token
+def activity_api():
+    start, end = request.args.get("start"), request.args.get("end")
+
+    end = end if end is not None else datetime.now(timezone.utc)
+    start = start if start is not None else end - timedelta(hours=24)
+
+    return jsonify(g.user.get_stats_between(start, end))

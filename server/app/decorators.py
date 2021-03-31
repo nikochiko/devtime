@@ -1,6 +1,8 @@
+import jwt
 from functools import wraps
+from typing import Optional
 
-from flask import g, make_response, redirect, request, session
+from flask import current_app, g, make_response, redirect, request, session
 
 from app.models import User
 
@@ -43,3 +45,48 @@ def requires_api_key(f):
         return f(*args, **kwargs)
 
     return wrapper
+
+
+def requires_jwt_token(f):
+    """
+    Decorator for view function. Requires a HTTP Authorization header with token.
+    """
+
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        auth_header = request.headers.get("Authorization")
+        if auth_header is None:
+            return make_response(
+                {"message": "HTTP_AUTHORIZATION header is required"}, 403
+            )
+
+        # check if auth header is a 'token' type
+        auth_type, token = auth_header.split(" ", maxsplit=1)
+        if auth_type != "token":
+            return make_response(
+                {"message": "Authorization header must start with `Token `"}
+            )
+
+        user = jwt_user_from_payload(jwt_decode(token))
+        g.user = user
+        return f(*args, **kwargs)
+
+    return wrapper
+
+
+def jwt_decode(
+    token: str, secret: Optional[str] = None, algo: Optional[str] = None
+) -> dict[str, any]:
+    """Decode a JWT to its payload form"""
+    return jwt.decode(
+        token,
+        secret or current_app.config["SECRET_KEY"],
+        algorithms=[algo or current_app.config["JWT_ALGORITHM"]],
+    )
+
+
+def jwt_user_from_payload(payload: dict[str, any]) -> User:
+    """Gets user from JWT payload"""
+
+    # TODO: add expiry check
+    return User.query.get(payload["id"])

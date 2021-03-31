@@ -1,6 +1,9 @@
 import os
 from datetime import timedelta
 
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # two levels outside this file (server/ directory)
 base_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -15,6 +18,8 @@ DB_URL = DB_URL.replace("postgres://", "postgresql://")
 
 class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", os.urandom(16))
+
+    JWT_ALGORITHM = "HS256"
 
     TEMPLATES_AUTO_RELOAD = True
 
