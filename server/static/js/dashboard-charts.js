@@ -291,15 +291,6 @@ let todaysStats = function(authToken, chartType="pie"){
                     padding: {
                         right: 10
                     }
-                },
-                options: {
-                    scales: {
-                        yAxes: [{
-                            gridLines: {
-                                display: false
-                            },
-                        }]
-                    }
                 }
             });
 
