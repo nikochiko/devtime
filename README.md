@@ -1,6 +1,17 @@
 # DevTime - Code-time metrics for developers 👨‍💻
 🕒 We track time for you while you do the coding. Available at [DevTime.Tech](http://devtime.tech)
 
+
+## How to use?
+
+1. Sign up for DevTime on https://devtime.tech. It's still a work in progress so you might notice a few bugs
+and a few incomplete views. Report them, on the issues tracker right [here](https://github.com/nikochiko/devtime/issues/new).
+2. Get the DevTime extension for your editor. We have the one for VS-Code available atm - https://marketplace.visualstudio.com/items?itemName=DevTime.devtime
+3. Get your API-key from the activity tab. Now when you open VS-Code, it will prompt you for this API key. Copy/paste the key there and you're good to go!!
+4. Now now you can just focus on writing your code. You can go to the dashboard - https://devtime.tech/dashboard and see your activity. But hey that's not
+even half of what DevTime means to become, so you keep writing your code, we'll keep adding new fun features. We'll notify you when we do 😄
+
+
 ## Development Setup
 
 ### Techstack
@@ -57,10 +68,13 @@ Now go to your browser and head to http://localhost:8000 to see the website in a
 * Authentication setup with GitHub OAuth via Auth0
 * API-Key functionality
 * Ability to receive heartbeats from editors and store them as coding sessions in the database
+* [x] Better UI/UX
+* [x] Coding charts - hourly, daily, weekly
 
 ### What we want it to have in the future:
-* [ ] Better UI/UX
-* [ ] Coding charts - hourly, daily, weekly
 * [ ] Widgets of these charts for showing on Portfolios
 * [ ] Widget for whether the user is currently coding/idle/offline
-* [ ] Editor plug-ins
+* [ ] Editor plug-ins:
+  * [X] VS-Code - https://github.com/nikochiko/devtime-vscode
+  * [ ] Atom
+  * [ ] Sublime 
