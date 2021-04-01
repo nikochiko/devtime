@@ -83,6 +83,19 @@ def activity():
     return render_template("activity.html")
 
 
+@app.route("/profile")
+@requires_auth
+def profile():
+    g.jwt_token = get_jwt_for_user(g.user)
+    return render_template("profile.html")
+
+
+@app.route("/widgets")
+@requires_auth
+def widgets():
+    return render_template("widgets.html")
+
+
 @app.route("/api/heartbeats", methods=["POST"])
 @requires_api_key
 def heartbeats():

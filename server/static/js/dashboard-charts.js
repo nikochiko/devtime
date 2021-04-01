@@ -14,6 +14,10 @@ let compareDatesInDDMMYY = function(a, b) {
     }
 };
 
+let capitalize = function(x) {
+    return x.charAt(0).toUpperCase() + x.slice(1);
+};
+
 let chartData = function(authToken, chartType="line"){
     return {
         date: 'today',
@@ -93,7 +97,8 @@ let chartData = function(authToken, chartType="line"){
                 c.destroy();
             }
 
-            let ctx = document.getElementById("daywiseChart").getContext("2d");
+            let canvas = document.getElementById("daywiseChart")
+            let ctx = canvas.getContext("2d");
 
             let sortedDates = Object.keys(this.data);
             sortedDates.sort(compareDatesInDDMMYY);
@@ -114,7 +119,7 @@ let chartData = function(authToken, chartType="line"){
                     datasets: [
                         {
                             label: "Time (in minutes)",
-                            backgroundColor: "rgba(102, 126, 234, 0.25)",
+                            backgroundColor: "rgba(29, 78, 216, 0.33)",
                             borderColor: "rgba(102, 126, 234, 1)",
                             pointBackgroundColor: "rgba(102, 126, 234, 1)",
                             data: dataPoints,
@@ -136,6 +141,11 @@ let chartData = function(authToken, chartType="line"){
                     }
                 }
             });
+
+            canvas.style.width ='100%';
+            canvas.style.height='100%';
+            canvas.width  = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
         }
     }
 };
@@ -247,7 +257,7 @@ function colorChart(ctx, chart) {
     chart.update();
 }
 
-let todaysStats = function(authToken, chartType="pie"){
+let todaysStats = function(authToken, chartType="doughnut"){
     return {
         data: null,
         fetch: function(){
@@ -274,12 +284,13 @@ let todaysStats = function(authToken, chartType="pie"){
                 c.destroy();
             }
 
-            let ctx = document.getElementById("todaysStats").getContext("2d");
+            let canvas = document.getElementById("todaysStats");
+            let ctx = canvas.getContext("2d");
 
             let chart = new Chart(ctx, {
                 type: chartType,
                 data: {
-                    labels: Object.keys(this.data.languages),
+                    labels: Object.keys(this.data.languages).map(capitalize),
                     datasets: [
                         {
                             label: "Time (in minutes)",
@@ -295,6 +306,132 @@ let todaysStats = function(authToken, chartType="pie"){
             });
 
             colorChart(ctx, chart);
+
+            c = false;
+
+            Chart.helpers.each(Chart.instances, function(instance) {
+                if (instance.chart.canvas.id == 'todaysEditorStats') {
+                    c = instance;
+                }
+            });
+
+            if(c) {
+                c.destroy();
+            }
+
+            canvas = document.getElementById("todaysEditorStats");
+            ctx = canvas.getContext("2d");
+
+            chart = new Chart(ctx, {
+                type: chartType,
+                data: {
+                    labels: Object.keys(this.data.editors).map(capitalize),
+                    datasets: [
+                        {
+                            label: "Time (in minutes)",
+                            data: Object.values(this.data.editors),
+                        },
+                    ],
+                },
+                layout: {
+                    padding: {
+                        right: 10
+                    }
+                }
+            });
+
+            colorChart(ctx, chart);
+        }
+    }
+};
+
+let customDayChart = function(authToken, date) {
+    date = new Date(date);
+    let chartType = "doughnut";
+
+    return {
+        data: null,
+        fetch: function(){
+            let startIso = new Date(date - 24 * 60 * 60 * 1000);
+            let endIso = new Date(date + 24 * 60 * 60 * 1000);
+            let url = `/api/activity?start=${startIso.toISOString()}&end=${endIso.toISOString()}`;
+            fetch(url, { method: "GET", headers: { Authorization: `token ${authToken}` } })
+                .then(res => res.json())
+                .then(res => {
+                    this.data = res;
+                    this.renderChart();
+                })
+        },
+        renderChart: function(){
+            let c = false;
+
+            Chart.helpers.each(Chart.instances, function(instance) {
+                if (instance.chart.canvas.id == "customDateChart") {
+                    c = instance;
+                }
+            });
+
+            if(c) {
+                c.destroy();
+            }
+
+            let canvas = document.getElementById("customDateChart");
+            let ctx = canvas.getContext("2d");
+
+            let chart = new Chart(ctx, {
+                type: chartType,
+                data: {
+                    labels: Object.keys(this.data.languages).map(capitalize),
+                    datasets: [
+                        {
+                            label: "Time (in minutes)",
+                            data: Object.values(this.data.languages),
+                        },
+                    ],
+                },
+                layout: {
+                    padding: {
+                        right: 10
+                    }
+                }
+            });
+
+            colorChart(ctx, chart);
+
+            // c = false;
+
+            // Chart.helpers.each(Chart.instances, function(instance) {
+            //     if (instance.chart.canvas.id == 'customDateChartEditor') {
+            //         c = instance;
+            //     }
+            // });
+
+            // if(c) {
+            //     c.destroy();
+            // }
+
+            // canvas = document.getElementById("todaysEditorStats");
+            // ctx = canvas.getContext("2d");
+
+            // chart = new Chart(ctx, {
+            //     type: chartType,
+            //     data: {
+            //         labels: Object.keys(this.data.editors).map(capitalize),
+            //         datasets: [
+            //             {
+            //                 label: "Time (in minutes)",
+            //                 data: Object.values(this.data.editors),
+            //             },
+            //         ],
+            //     },
+            //     layout: {
+            //         padding: {
+            //             right: 10
+            //         }
+            //     }
+            // });
+
+            // colorChart(ctx, chart);
         }
     }
 };
