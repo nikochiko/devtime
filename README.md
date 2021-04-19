@@ -1,6 +1,7 @@
 # DevTime - Code-time metrics for developers 👨‍💻
 🕒 We track time for you while you do the coding. Available at [DevTime.Tech](http://devtime.tech)
 
+![image](https://user-images.githubusercontent.com/37668193/115263491-19ac1e80-a153-11eb-9be6-5bccc942e2ce.png)
 
 ## How to use?
 
