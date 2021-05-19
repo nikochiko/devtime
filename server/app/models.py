@@ -125,13 +125,13 @@ class User(db.Model):
 class CodingSession(db.Model):
     __tablename__ = "devtime_coding_sessions"
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.models.models.BigIntegerField(), primary_key=True)
     language = db.Column(db.String(64), index=True)
-    started_at = db.Column(db.DateTime(timezone=True))
-    last_heartbeat_at = db.Column(db.DateTime(timezone=True))
+    started_at = db.Column(db.DateTime())
+    last_heartbeat_at = db.Column(db.DateTime())
     editor = db.Column(db.String(20))
 
-    user_id = db.Column(
+    devtime_user_id = db.Column(
         db.String(64), db.ForeignKey("user.hyperlog_uid"), nullable=False
     )
     user = db.relationship(

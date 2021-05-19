@@ -6,7 +6,6 @@ from flask import (
     redirect,
     render_template,
     jsonify,
-    session,
     g,
 )
 
