@@ -2,8 +2,9 @@ import jwt
 from functools import wraps
 from typing import Optional
 
-from flask import current_app, g, make_response, redirect, request, session
+from flask import current_app, g, jsonify, make_response, redirect, request, session
 
+from app.config import Config
 from app.models import User
 
 
@@ -18,6 +19,26 @@ def requires_auth(f):
         if "profile" not in session:
             return redirect("/login")
         g.user = User.query.get(session["profile"]["user_id"])
+        return f(*args, **kwargs)
+
+    return wrapper
+
+
+def requires_internal_auth(f):
+    """
+    Auth decorator for internal API
+    """
+
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        auth_header = request.headers.get("Authorization")
+        if auth_header is None or not auth_header.lower().startswith("bearer "):
+            return make_response(jsonify({"message": "Authorization Header is required"}), 401)
+        
+        token = auth_header.split(maxsplit=1)[-1]
+        if token != Config.INTERNAL_AUTH_TOKEN:
+            return make_response(jsonify({"message": "Unauthorized"}), 401)
+
         return f(*args, **kwargs)
 
     return wrapper

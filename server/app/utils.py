@@ -1,6 +1,5 @@
 import base64
 import uuid
-from datetime import datetime
 from typing import Optional
 
 import jwt

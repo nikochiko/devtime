@@ -1,8 +1,7 @@
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from dateutil.parser import isoparse
 
 from flask import (
-    url_for,
     request,
     redirect,
     render_template,
@@ -10,64 +9,16 @@ from flask import (
     session,
     g,
 )
-from werkzeug.urls import url_encode
 
-from app import app, auth0, db
+from app import app, db
 from app.models import User, CodingSession
-from app.decorators import requires_auth, requires_api_key, requires_jwt_token
+from app.decorators import requires_auth, requires_internal_auth, requires_api_key, requires_jwt_token
 from app.utils import get_jwt_for_user
 
 
 @app.route("/")
 def index():
     return redirect("/dashboard")
-
-
-@app.route("/login")
-def login():
-    return auth0.authorize_redirect(
-        redirect_uri=url_for("login_callback", _external=True)
-    )
-
-
-@app.route("/login/callback")
-def login_callback():
-    # handle response from token endpoint
-    token = auth0.authorize_access_token()
-    userinfo = auth0.parse_id_token(token)
-
-    user_id, username = userinfo["sub"], userinfo["nickname"]
-
-    if not (user := User.query.get(user_id)):
-        user = User(id=user_id, username=username)
-        db.session.add(user)
-        db.session.commit()
-
-    g.user = user
-
-    # store user info in flask session
-    session["jwt_payload"] = userinfo
-    session["profile"] = {
-        "user_id": user_id,
-        "username": username,
-        "name": userinfo["name"],
-        "picture": userinfo["picture"],
-    }
-
-    return redirect(url_for("dashboard"))
-
-
-@app.route("/logout")
-def logout():
-    # Clear session stored data
-    session.clear()
-    # Redirect user to logout endpoint
-    params = {
-        "returnTo": url_for("index", _external=True),
-        "client_id": "a5IXxvCxOHrLFuT9YfunS320hTZqWY7p",
-    }
-    return redirect(f"{auth0.api_base_url}/v2/logout?{url_encode(params)}")
-
 
 @app.route("/dashboard")
 @requires_auth
@@ -94,6 +45,19 @@ def profile():
 @requires_auth
 def widgets():
     return render_template("widgets.html")
+
+
+@app.route("/internal/users", methods=["POST"])
+@requires_internal_auth
+def users():
+    data = request.get_json()
+    hyperlog_uid = data["hyperlog_uid"]
+
+    user = User(hyperlog_uid=hyperlog_uid)
+    db.session.add(user)
+    db.session.commit()
+
+    return jsonify({"success": True, "api_key": user.api_key})
 
 
 @app.route("/api/heartbeats", methods=["POST"])

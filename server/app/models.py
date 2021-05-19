@@ -1,9 +1,9 @@
 from collections import defaultdict
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from sqlalchemy import event
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from flask import current_app
 
 from app import db
@@ -11,14 +11,10 @@ from app.utils import generate_api_key
 
 
 class User(db.Model):
-    id = db.Column(db.String(64), primary_key=True)
-    username = db.Column(db.String(20), index=True, unique=True)
+    __tablename__ = "devtime_users"
+    hyperlog_uid = db.Column(UUID(), primary_key=True)
     api_key = db.Column(db.String(255), index=True, unique=True)
-    timezone_offset = db.Column(db.Integer, default=0)
     statistics = db.Column(JSONB())
-
-    def __repr__(self):
-        return f"<User: {self.username}>"
 
     @property
     def current_activity_message(self):
@@ -127,6 +123,8 @@ class User(db.Model):
 
 
 class CodingSession(db.Model):
+    __tablename__ = "devtime_coding_sessions"
+
     id = db.Column(db.Integer, primary_key=True)
     language = db.Column(db.String(64), index=True)
     started_at = db.Column(db.DateTime(timezone=True))
@@ -134,7 +132,7 @@ class CodingSession(db.Model):
     editor = db.Column(db.String(20))
 
     user_id = db.Column(
-        db.String(64), db.ForeignKey("user.id"), nullable=False
+        db.String(64), db.ForeignKey("user.hyperlog_uid"), nullable=False
     )
     user = db.relationship(
         "User", backref=db.backref("coding_sessions", lazy=True)
