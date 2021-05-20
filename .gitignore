@@ -132,3 +132,5 @@ dmypy.json
 # sqlite
 *.db
 .vscode
+
+node_modules/
