@@ -52,7 +52,7 @@ def users():
     data = request.get_json()
     hyperlog_uid = data["hyperlog_uid"]
 
-    user = User(hyperlog_uid=hyperlog_uid)
+    user = User(id=hyperlog_uid)
     db.session.add(user)
     db.session.commit()
 
@@ -76,7 +76,7 @@ def heartbeats():
     data = request.get_json()
     recorded_at, language = data["recorded_at"], data["language"]
     editor = data["client"]
-    recorded_at = isoparse(recorded_at)
+    recorded_at = isoparse(recorded_at).astimezone(timezone.utc).replace(tzinfo=None)
 
     # try to get last session with the same programming language
     last_session = (
@@ -116,11 +116,11 @@ def activity_api():
     start_iso, end_iso = request.args.get("start"), request.args.get("end")
 
     start = (
-        isoparse(start_iso)
+        isoparse(start_iso).astimezone(timezone.utc).replace(tzinfo=None)
         if start_iso
         else datetime.now(timezone.utc) - timedelta(days=1)
     )
-    end = isoparse(end_iso) if end_iso else start + timedelta(days=1)
+    end = isoparse(end_iso).astimezone(timezone.utc).replace(tzinfo=None) if end_iso else start + timedelta(days=1)
 
     return jsonify(g.user.get_stats_between(start, end))
 
@@ -132,11 +132,11 @@ def daywise_stats():
 
     # default weekly stats
     start = (
-        isoparse(start_date)
+        isoparse(start_date).astimezone(timezone.utc).replace(tzinfo=None)
         if start_date
         else date.today() - timedelta(days=7)
     )
-    end = isoparse(end_date) if end_date else date.today()
+    end = isoparse(end_date).astimezone(timezone.utc).replace(tzinfo=None) if end_date else date.today()
 
     remove_time_attrs = lambda d: datetime(
         d.year, d.month, d.day, tzinfo=d.tzinfo

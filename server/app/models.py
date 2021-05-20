@@ -12,7 +12,7 @@ from app.utils import generate_api_key
 
 class User(db.Model):
     __tablename__ = "devtime_users"
-    hyperlog_uid = db.Column(UUID(), primary_key=True)
+    id = db.Column(UUID(), primary_key=True)
     api_key = db.Column(db.String(255), index=True, unique=True)
     statistics = db.Column(JSONB())
 
@@ -125,14 +125,14 @@ class User(db.Model):
 class CodingSession(db.Model):
     __tablename__ = "devtime_coding_sessions"
 
-    id = db.Column(db.models.models.BigIntegerField(), primary_key=True)
+    id = db.Column(db.BigInteger(), primary_key=True)
     language = db.Column(db.String(64), index=True)
     started_at = db.Column(db.DateTime())
     last_heartbeat_at = db.Column(db.DateTime())
     editor = db.Column(db.String(20))
 
     devtime_user_id = db.Column(
-        db.String(64), db.ForeignKey("user.hyperlog_uid"), nullable=False
+        UUID(), db.ForeignKey("devtime_users.id"), nullable=False
     )
     user = db.relationship(
         "User", backref=db.backref("coding_sessions", lazy=True)
