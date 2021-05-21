@@ -1,6 +1,7 @@
 from datetime import date, datetime, timedelta, timezone
 from dateutil.parser import isoparse
 
+import pytz
 from flask import (
     request,
     redirect,
@@ -73,14 +74,24 @@ def heartbeats():
       "language": "python"
     }
     """
+    user = g.api_user
+
     data = request.get_json()
     recorded_at, language = data["recorded_at"], data["language"]
     editor = data["client"]
-    recorded_at = isoparse(recorded_at).astimezone(timezone.utc).replace(tzinfo=None)
+
+    recorded_at = isoparse(recorded_at)
+    tz_naive_recorded_at = recorded_at.replace(tzinfo=None)
+
+    if recorded_at.tzinfo is None:
+        recorded_at = recorded_at.replace(tzinfo=timezone.utc)
+
+    # the date for that datetime
+    tz_aware_date = recorded_at.astimezone(pytz.timezone(user.timezone)).date()
 
     # try to get last session with the same programming language
     last_session = (
-        CodingSession.query.filter_by(user=g.api_user, language=language)
+        CodingSession.query.filter_by(user=user, language=language)
         .order_by(CodingSession.id.desc())
         .first()
     )
@@ -88,21 +99,26 @@ def heartbeats():
     # add a new session object if it is first for the language or stale
     if (
         last_session is None
-        or recorded_at - last_session.last_heartbeat_at
+        or tz_naive_recorded_at - last_session.last_heartbeat_at
         > app.config["DEVTIME_ACCEPTABLE_BREAK_DURATION"]
     ):
         coding_session = CodingSession(
-            user=g.api_user,
+            user=user,
             language=language,
-            started_at=recorded_at,
-            last_heartbeat_at=recorded_at,
+            started_at=tz_naive_recorded_at,
+            last_heartbeat_at=tz_naive_recorded_at,
             editor=editor,
         )
+        user.statistics[tz_aware_date.strftime("%d-%m-%Y")] = user.get_stats_by_date(tz_aware_date)
         db.session.add(coding_session)
+        db.session.add(user)
     else:
+        user.statistics[tz_aware_date.strftime("%d-%m-%Y")] = user.get_stats_by_date(tz_aware_date)
+
         # overwrite last_heartbeat to most recent heartbeat
-        last_session.last_heartbeat_at = recorded_at
+        last_session.last_heartbeat_at = tz_naive_recorded_at
         db.session.add(last_session)
+        db.session.add(user)
 
     db.session.commit()
 
@@ -138,13 +154,11 @@ def daywise_stats():
     )
     end = isoparse(end_date).astimezone(timezone.utc).replace(tzinfo=None) if end_date else date.today()
 
-    remove_time_attrs = lambda d: datetime(
-        d.year, d.month, d.day, tzinfo=d.tzinfo
-    )
+    remove_time_attrs = lambda d: date(d.year, d.month, d.day)
 
     start_date, end_date = (
         remove_time_attrs(start),
-        remove_time_attrs(end) - timedelta(milliseconds=1),
+        remove_time_attrs(end)
     )
 
     return jsonify(g.user.daywise_stats(start_date, end_date))

@@ -1,9 +1,10 @@
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
-from typing import Optional
+from datetime import date, datetime, timedelta, timezone
+from typing import Any, Optional
 
 from sqlalchemy import event
 from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.ext.mutable import MutableDict
 from flask import current_app
 
 from app import db
@@ -12,9 +13,10 @@ from app.utils import generate_api_key
 
 class User(db.Model):
     __tablename__ = "devtime_users"
-    id = db.Column(UUID(), primary_key=True)
+    id = db.Column(UUID, primary_key=True)
     api_key = db.Column(db.String(255), index=True, unique=True)
-    statistics = db.Column(JSONB())
+    statistics = db.Column(MutableDict.as_mutable(JSONB))
+    timezone = db.Column(db.String)
 
     @property
     def current_activity_message(self):
@@ -57,12 +59,7 @@ class User(db.Model):
             CodingSession.started_at < dt2,
         ).order_by(CodingSession.started_at.asc())
 
-        stats = {
-            "languages": defaultdict(int),
-            "total": 0,  # minutes
-            "editors": defaultdict(int),
-            "idle_for": 0,  # minutes
-        }
+        stats = self.get_default_stats_template()
 
         allowed_break = current_app.config["DEVTIME_ACCEPTABLE_BREAK_DURATION"]
         last_on_left = dt1
@@ -94,45 +91,66 @@ class User(db.Model):
 
         return stats
 
+    def get_stats_by_date(
+            self, stats_date: date, use_cache: Optional[bool] = True) -> dict[str, Any]:
+        """Stats for user by date, in their timezone"""
+        date_str = stats_date.strftime("%d-%m-%YYYY")
+
+        if use_cache and date_str in self.statistics:
+            return self.statistics[date_str]
+
+        start_time_utc = datetime(stats_date.year, stats_date.month, stats_date.day, 0, 0, 0)
+        end_time_utc = datetime(stats_date.year, stats_date.month, stats_date.day, 23, 59, 59)
+
+        return self.get_stats_between(start_time_utc, end_time_utc)
+
     def daywise_stats(
-        self, start: datetime, end: Optional[datetime] = None
+        self, start: date, end: Optional[date] = None
     ) -> dict[str, any]:
-        """Get stats on a daywise-frequency"""
+        """Get stats on a daywise-frequency
+        
+        start to end days inclusive
+        """
         if end is None:
-            end = start + timedelta(days=1)
+            end = start
 
         # check end is a day after start
         assert (
             start <= end
         ), "End date must be greater than or equal to start date"
 
-        # stats will map dates in isoformat to the stats from get_stats_between for that day
+        # stats will map dates in dd-mm-YYYY format to the stats from get_stats_between for that day
         stats = {}
 
         # collect statistics for each day in a while loop
         current_date = start
         while current_date <= end:
             day_after_current = current_date + timedelta(days=1)
-            stats[current_date.strftime("%d-%m-%y")] = self.get_stats_between(
-                current_date, day_after_current
-            )
-
+            stats[current_date.strftime("%d-%m-%Y")] = self.get_stats_by_date(current_date)
             current_date = day_after_current
 
         return stats
+
+    def get_default_stats_template(self) -> dict[str, Any]:
+        return {
+            "languages": defaultdict(int),
+            "total": 0,  # minutes
+            "editors": defaultdict(int),
+            "idle_for": 0,  # minutes
+        }
 
 
 class CodingSession(db.Model):
     __tablename__ = "devtime_coding_sessions"
 
-    id = db.Column(db.BigInteger(), primary_key=True)
+    id = db.Column(db.BigInteger, primary_key=True)
     language = db.Column(db.String(64), index=True)
-    started_at = db.Column(db.DateTime())
-    last_heartbeat_at = db.Column(db.DateTime())
+    started_at = db.Column(db.DateTime)
+    last_heartbeat_at = db.Column(db.DateTime)
     editor = db.Column(db.String(20))
 
     devtime_user_id = db.Column(
-        UUID(), db.ForeignKey("devtime_users.id"), nullable=False
+        UUID, db.ForeignKey("devtime_users.id"), nullable=False
     )
     user = db.relationship(
         "User", backref=db.backref("coding_sessions", lazy=True)
