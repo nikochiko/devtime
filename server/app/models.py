@@ -104,7 +104,7 @@ class User(db.Model):
         if use_cache and date_str in self.statistics:
             return self.statistics[date_str]
 
-        user_tz = ZoneInfo(self.timezone)
+        user_tz = ZoneInfo(self.timezone or "UTC")
         utc_tz = ZoneInfo("UTC")
 
         start_time_utc = datetime(
