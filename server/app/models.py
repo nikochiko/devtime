@@ -1,6 +1,7 @@
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Optional
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import event
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -52,6 +53,9 @@ class User(db.Model):
         self, dt1: datetime, dt2: datetime
     ) -> dict[str, any]:
         """Compiles stats for user between after dt1 and before dt2"""
+        utc = ZoneInfo("UTC")
+        if dt1.tzinfo == utc and dt2.tzinfo == utc:
+            dt1, dt2 = dt1.replace(tzinfo=None), dt2.replace(tzinfo=None)
 
         sessions = CodingSession.query.filter(
             CodingSession.user == self,
@@ -92,15 +96,35 @@ class User(db.Model):
         return stats
 
     def get_stats_by_date(
-            self, stats_date: date, use_cache: Optional[bool] = True) -> dict[str, Any]:
+        self, stats_date: date, use_cache: Optional[bool] = True
+    ) -> dict[str, Any]:
         """Stats for user by date, in their timezone"""
         date_str = stats_date.strftime("%d-%m-%YYYY")
 
         if use_cache and date_str in self.statistics:
             return self.statistics[date_str]
 
-        start_time_utc = datetime(stats_date.year, stats_date.month, stats_date.day, 0, 0, 0)
-        end_time_utc = datetime(stats_date.year, stats_date.month, stats_date.day, 23, 59, 59)
+        user_tz = ZoneInfo(self.timezone)
+        utc_tz = ZoneInfo("UTC")
+
+        start_time_utc = datetime(
+            stats_date.year,
+            stats_date.month,
+            stats_date.day,
+            0,
+            0,
+            0,
+            tzinfo=user_tz,
+        ).astimezone(utc_tz)
+        end_time_utc = datetime(
+            stats_date.year,
+            stats_date.month,
+            stats_date.day,
+            23,
+            59,
+            59,
+            tzinfo=user_tz,
+        ).astimezone(utc_tz)
 
         return self.get_stats_between(start_time_utc, end_time_utc)
 
@@ -108,7 +132,7 @@ class User(db.Model):
         self, start: date, end: Optional[date] = None
     ) -> dict[str, any]:
         """Get stats on a daywise-frequency
-        
+
         start to end days inclusive
         """
         if end is None:
@@ -126,7 +150,9 @@ class User(db.Model):
         current_date = start
         while current_date <= end:
             day_after_current = current_date + timedelta(days=1)
-            stats[current_date.strftime("%d-%m-%Y")] = self.get_stats_by_date(current_date)
+            stats[current_date.strftime("%d-%m-%Y")] = self.get_stats_by_date(
+                current_date
+            )
             current_date = day_after_current
 
         return stats
