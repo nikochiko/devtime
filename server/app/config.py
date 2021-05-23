@@ -8,9 +8,7 @@ load_dotenv()
 # two levels outside this file (server/ directory)
 base_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
-DB_URL = os.getenv(
-    "DATABASE_URL", f"postgresql://localhost:5432/devtime_dev"
-)
+DB_URL = os.getenv("DATABASE_URL", f"postgresql://localhost:5432/devtime_dev")
 
 # heroku still uses postgres:// idfk why
 DB_URL = DB_URL.replace("postgres://", "postgresql://")

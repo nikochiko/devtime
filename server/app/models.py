@@ -65,20 +65,14 @@ class User(db.Model):
 
         stats = self.get_default_stats_template()
 
-        allowed_break = current_app.config["DEVTIME_ACCEPTABLE_BREAK_DURATION"]
         last_on_left = dt1
         for session in sessions:
             left_end = max(session.started_at, dt1)
             right_end = min(session.last_heartbeat_at, dt2)
 
-            # add to idle time if idle for more than allowed break
-            idle_time = left_end - last_on_left
-            if idle_time > allowed_break:
-                stats["idle_for"] += round(idle_time.seconds / 60)
-
             # convert duration to minutes
             duration = round(
-                (right_end - left_end + timedelta(seconds=30)).seconds / 60
+                (right_end - left_end + timedelta(seconds=60)).seconds / 60
             )
 
             stats["languages"][session.language] += duration
@@ -88,7 +82,7 @@ class User(db.Model):
             stats["total"] += (
                 max(right_end, last_on_left)
                 - max(left_end, last_on_left)
-                + timedelta(seconds=30)
+                + timedelta(seconds=60)
             ).seconds / 60
             stats["total"] = round(stats["total"])
             last_on_left = max(right_end, last_on_left)
@@ -99,7 +93,7 @@ class User(db.Model):
         self, stats_date: date, use_cache: Optional[bool] = True
     ) -> dict[str, Any]:
         """Stats for user by date, in their timezone"""
-        date_str = stats_date.strftime("%d-%m-%YYYY")
+        date_str = stats_date.strftime("%d-%m-%Y")
 
         if use_cache and date_str in self.statistics:
             return self.statistics[date_str]
@@ -162,7 +156,6 @@ class User(db.Model):
             "languages": defaultdict(int),
             "total": 0,  # minutes
             "editors": defaultdict(int),
-            "idle_for": 0,  # minutes
         }
 
 

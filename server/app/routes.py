@@ -12,13 +12,19 @@ from flask import (
 
 from app import app, db
 from app.models import User, CodingSession
-from app.decorators import requires_auth, requires_internal_auth, requires_api_key, requires_jwt_token
+from app.decorators import (
+    requires_auth,
+    requires_internal_auth,
+    requires_api_key,
+    requires_jwt_token,
+)
 from app.utils import get_jwt_for_user
 
 
 @app.route("/")
 def index():
     return redirect("/dashboard")
+
 
 @app.route("/dashboard")
 @requires_auth
@@ -109,11 +115,15 @@ def heartbeats():
             last_heartbeat_at=tz_naive_recorded_at,
             editor=editor,
         )
-        user.statistics[tz_aware_date.strftime("%d-%m-%Y")] = user.get_stats_by_date(tz_aware_date)
+        user.statistics[
+            tz_aware_date.strftime("%d-%m-%Y")
+        ] = user.get_stats_by_date(tz_aware_date, use_cache=False)
         db.session.add(coding_session)
         db.session.add(user)
     else:
-        user.statistics[tz_aware_date.strftime("%d-%m-%Y")] = user.get_stats_by_date(tz_aware_date)
+        user.statistics[
+            tz_aware_date.strftime("%d-%m-%Y")
+        ] = user.get_stats_by_date(tz_aware_date, use_cache=False)
 
         # overwrite last_heartbeat to most recent heartbeat
         last_session.last_heartbeat_at = tz_naive_recorded_at
@@ -136,7 +146,11 @@ def activity_api():
         if start_iso
         else datetime.now(timezone.utc) - timedelta(days=1)
     )
-    end = isoparse(end_iso).astimezone(timezone.utc).replace(tzinfo=None) if end_iso else start + timedelta(days=1)
+    end = (
+        isoparse(end_iso).astimezone(timezone.utc).replace(tzinfo=None)
+        if end_iso
+        else start + timedelta(days=1)
+    )
 
     return jsonify(g.user.get_stats_between(start, end))
 
@@ -152,13 +166,14 @@ def daywise_stats():
         if start_date
         else date.today() - timedelta(days=7)
     )
-    end = isoparse(end_date).astimezone(timezone.utc).replace(tzinfo=None) if end_date else date.today()
+    end = (
+        isoparse(end_date).astimezone(timezone.utc).replace(tzinfo=None)
+        if end_date
+        else date.today()
+    )
 
     remove_time_attrs = lambda d: date(d.year, d.month, d.day)
 
-    start_date, end_date = (
-        remove_time_attrs(start),
-        remove_time_attrs(end)
-    )
+    start_date, end_date = (remove_time_attrs(start), remove_time_attrs(end))
 
     return jsonify(g.user.daywise_stats(start_date, end_date))
