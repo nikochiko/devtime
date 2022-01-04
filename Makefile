@@ -12,8 +12,8 @@ pip: venv
 	./venv/bin/python -m pip install -r requirements.txt
 
 .PHONY: run
-run:
-	flask run -h 127.0.0.1 -p 8000
+run: venv
+	./venv/bin/python -m flask run -h 127.0.0.1 -p 8000
 
 .PHONY: db-setup 
 db-create: venv
